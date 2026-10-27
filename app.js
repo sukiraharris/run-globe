@@ -10,8 +10,8 @@ const SPORTS = {
 };
 const WORLD_VIEW = { lat: 38, lng: -40, altitude: innerWidth < 760 ? 3.6 : 2.3 };
 const LABEL_ALT_HIDE = 0.12;   // hide place pins once zoomed into a place
-// street tiles shown when zoomed into a place (CARTO dark basemap, OSM data)
-const TILE_URL = (x, y, l) => `https://${'abcd'[(x + y) % 4]}.basemaps.cartocdn.com/dark_nolabels/${l}/${x}/${y}@2x.png`;
+// street tiles shown when zoomed into a place (Esri World Dark Gray, no API key needed)
+const TILE_URL = (x, y, l) => `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/${l}/${y}/${x}`;
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const $ = (id) => document.getElementById(id);
@@ -139,6 +139,7 @@ function buildGlobe() {
       globe.pointsData(close ? [] : state.visiblePlaces || []);
       // swap the dotted world for real street tiles when zoomed into a place
       globe.hexPolygonsData(close ? [] : state.land || []);
+      globe.globeTileEngineMaxLevel?.(16);
       globe.globeTileEngineUrl(close ? TILE_URL : null);
       $('credit').hidden = !close;
       // fat lines get thinner relative to the view when zoomed in; keep them crisp

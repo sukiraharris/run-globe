@@ -87,4 +87,4 @@ scripts/get-token.mjs              one-time Strava authorization helper
 .github/workflows/update-data.yml  daily refresh
 ```
 
-Street map tiles © [CARTO](https://carto.com/attributions), map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors. Country shapes from [Natural Earth](https://www.naturalearthdata.com/) via world-atlas.
+Street map tiles © [Esri](https://www.esri.com) (World Dark Gray Canvas), map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors. Country shapes from [Natural Earth](https://www.naturalearthdata.com/) via world-atlas.

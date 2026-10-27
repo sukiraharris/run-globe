@@ -118,11 +118,11 @@ export function clusterPlaces(acts, radiusKm = CLUSTER_RADIUS_KM) {
 
 // Reverse-geocode a place name via OpenStreetMap Nominatim (1 req/sec, cached).
 export async function nameForPlace(lat, lng, cache) {
-  const key = `${lat.toFixed(1)},${lng.toFixed(1)}`;
+  const key = `en:${lat.toFixed(1)},${lng.toFixed(1)}`;   // 'en:' = English names
   if (cache[key]) return cache[key];
   try {
     await new Promise((r) => setTimeout(r, 1100));
-    const url = `https://nominatim.openstreetmap.org/reverse?format=json&zoom=10&lat=${lat}&lon=${lng}`;
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&zoom=10&accept-language=en&lat=${lat}&lon=${lng}`;
     const res = await fetch(url, { headers: { 'User-Agent': 'run-globe (github pages personal project)' } });
     const j = await res.json();
     const ad = j.address || {};
