@@ -126,7 +126,8 @@ export async function nameForPlace(lat, lng, cache) {
     const res = await fetch(url, { headers: { 'User-Agent': 'run-globe (github pages personal project)' } });
     const j = await res.json();
     const ad = j.address || {};
-    const local = ad.city || ad.town || ad.village || ad.municipality || ad.county || ad.state || 'Somewhere';
+    const raw = ad.city || ad.town || ad.village || ad.municipality || ad.county || ad.state || 'Somewhere';
+    const local = raw.split(' / ').pop().trim();   // "Kernow / Cornwall" -> "Cornwall"
     const name = ad.country ? `${local}, ${ad.country}` : local;
     cache[key] = name;
     return name;

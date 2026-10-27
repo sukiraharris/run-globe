@@ -16,6 +16,7 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const shortName = (name) => name.split(',')[0].split(' / ').pop().trim();
 const fmtKm = (km) => km >= 100 ? Math.round(km).toLocaleString() : km.toFixed(1);
 const fmtDate = (d, opts = { day: 'numeric', month: 'short', year: 'numeric' }) =>
   new Date(d + 'T12:00:00').toLocaleDateString('en-GB', opts);
@@ -92,7 +93,7 @@ function buildGlobe() {
     .htmlElement((p) => {
       const el = document.createElement('div');
       el.className = 'pin';
-      el.innerHTML = `${esc(p.name.split(',')[0])}<small>${fmtKm(p.km)} km</small>`;
+      el.innerHTML = `${esc(shortName(p.name))}<small>${fmtKm(p.km)} km</small>`;
       el.addEventListener('click', () => flyTo(p.id));
       return el;
     })
@@ -142,6 +143,7 @@ function buildGlobe() {
       globe.globeTileEngineMaxLevel?.(16);
       globe.globeTileEngineUrl(close ? TILE_URL : null);
       $('credit').hidden = !close;
+      document.body.classList.toggle('close-up', close);
       // fat lines get thinner relative to the view when zoomed in; keep them crisp
       globe.pathStroke(close ? 2.2 : 1.6);
     }
@@ -162,7 +164,7 @@ function openPlaceFromUrl() {
 }
 
 function tipHtml(a) {
-  const place = state.data.byPlace[a.place]?.name.split(',')[0] || '';
+  const place = shortName(state.data.byPlace[a.place]?.name || '');
   return `<div class="tip"><b>${esc(a.name)}</b><span>${fmtDate(a.date)} · ${esc(place)}<br>${fmtKm(a.km)} km · ${fmtTime(a.sec)}${a.elev ? ` · ${a.elev} m up` : ''}</span></div>`;
 }
 
@@ -338,7 +340,7 @@ function renderPlaceList(places) {
       .sort((x, y) => y[1] - x[1])
       .map(([sp, km]) => `<i style="flex:${km};background:${SPORTS[sp].color}"></i>`)
       .join('');
-    b.innerHTML = `<span class="name">${esc(p.name.split(',')[0])}</span>
+    b.innerHTML = `<span class="name">${esc(shortName(p.name))}</span>
       <span class="meta">${fmtKm(p.km)} km · ${p.count} ${p.count === 1 ? 'activity' : 'activities'}</span>
       <span class="mix" aria-hidden="true">${mix}</span>`;
     b.addEventListener('click', () => flyTo(p.id));

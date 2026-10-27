@@ -263,6 +263,21 @@ button:focus-visible, input:focus-visible {
   color: var(--muted);
 }
 
+/* ---------- Street-level view ---------- */
+/* lift the very dark street tiles a little, and shade the edges so text stays readable */
+body.close-up #globe canvas { filter: brightness(1.25); }
+body.close-up::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(8, 17, 32, 0.85) 0, rgba(8, 17, 32, 0) 38%),
+    linear-gradient(270deg, rgba(8, 17, 32, 0.85) 0, rgba(8, 17, 32, 0) 24%),
+    linear-gradient(0deg, rgba(8, 17, 32, 0.8) 0, rgba(8, 17, 32, 0) 18%);
+}
+.intro, .index, .sports, .timeline, .credit, .note { z-index: 2; }
+
 /* ---------- Map credit (street tiles) ---------- */
 .credit {
   position: fixed;
