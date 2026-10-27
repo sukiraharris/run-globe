@@ -75,7 +75,12 @@ const heatBucket = (n) => { let b = 0; for (let i = 0; i < HEAT.length; i++) if 
 let globe;
 
 async function init() {
-  const data = await fetch('data/activities.json', { cache: 'no-cache' }).then((r) => r.json());
+  const [data, config] = await Promise.all([
+    fetch('data/activities.json', { cache: 'no-cache' }).then((r) => r.json()),
+    fetch('config.json', { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : {})).catch(() => ({})),
+  ]);
+  // config.json "since": hide anything older (e.g. a couple of stray 2020 activities)
+  if (config.since) data.activities = data.activities.filter((a) => a.date >= config.since);
   data.byPlace = Object.fromEntries(data.places.map((p) => [p.id, p]));
   state.data = data;
   state.cutoff = data.activities.at(-1)?.date;

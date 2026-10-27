@@ -60,9 +60,12 @@ async function allActivities(token) {
 const token = await accessToken();
 const raw = await allActivities(token);
 const includePrivate = process.env.INCLUDE_PRIVATE === '1';
+const CONFIG = path.join(ROOT, 'config.json');
+const since = (fs.existsSync(CONFIG) && JSON.parse(fs.readFileSync(CONFIG, 'utf8')).since) || '';
 
 const usable = raw
   .filter((a) => includePrivate || (!a.private && a.visibility !== 'only_me'))
+  .filter((a) => !since || a.start_date_local.slice(0, 10) >= since)
   .map((a) => ({
     id: a.id,
     name: a.name,

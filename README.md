@@ -64,6 +64,10 @@ This site is public, so the data is cleaned before it's published:
 - **Only route shape and summary stats are published:** name, date, distance, time and elevation. Heart rate, descriptions and photos are never fetched.
 - Activities without GPS (treadmill, pool swims, gym) are left out.
 
+## Settings
+
+`config.json` holds site settings. `"since": "2025-01-01"` hides anything recorded before that date. To show your whole history, remove the line or set an earlier date.
+
 ## Add it to the personal website
 
 Embed the compact version anywhere:
