@@ -94,6 +94,50 @@ button:focus-visible, input:focus-visible {
 .sport[aria-pressed="false"] .swatch { box-shadow: none; }
 .sport:hover { border-color: rgba(232, 237, 245, 0.35); }
 
+/* ---------- Colour mode + heat legend ---------- */
+.mode {
+  display: inline-flex;
+  padding: 2px;
+  margin-right: 6px;
+  border: 1px solid var(--faint);
+  border-radius: 999px;
+  background: rgba(8, 17, 32, 0.55);
+  backdrop-filter: blur(6px);
+}
+.mode button {
+  border: 0;
+  background: none;
+  border-radius: 999px;
+  padding: 4px 11px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.mode button[aria-pressed="true"] { background: rgba(232, 237, 245, 0.14); color: var(--ink); }
+.mode button:hover { color: var(--ink); }
+body.heat .sport .swatch { background: var(--ink); box-shadow: none; opacity: 0.7; }
+
+.legend {
+  position: fixed;
+  right: var(--gutter);
+  bottom: calc(var(--gutter) + 76px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border: 1px solid var(--faint);
+  border-radius: 999px;
+  background: rgba(8, 17, 32, 0.7);
+  backdrop-filter: blur(6px);
+  font-size: 12px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  z-index: 2;
+}
+.legend[hidden] { display: none; }
+.legend-step { display: inline-flex; align-items: center; gap: 5px; }
+.legend-step i { width: 16px; height: 3px; border-radius: 2px; display: block; }
+body.heat .index { bottom: 150px; }
+
 /* ---------- Place index ---------- */
 .index {
   position: fixed;
@@ -324,6 +368,9 @@ body.embed .index, body.embed .note { display: none; }
   .place .name { font-size: 1rem; }
   .place .mix { display: none; }
   .note { display: none; }
+  .legend { left: var(--gutter); right: auto; bottom: calc(var(--gutter) + 150px + env(safe-area-inset-bottom)); gap: 7px; padding: 5px 10px; }
+  .legend-title { display: none; }
+  .credit { bottom: 2px; right: var(--gutter); font-size: 10px; }
   .pin small { display: none; }
   #dateLabel { min-width: 0; font-size: 12px; }
 }

@@ -58,7 +58,19 @@ const state = {
   cutoff: null,          // ISO date; activities after this are hidden
   focus: null,           // place id or null
   playing: false,
+  mode: params.get('mode') === 'heat' ? 'heat' : 'sport',   // colour routes by sport or by repeats
 };
+
+// "Repeats" colour ramp: how many different activities covered a stretch
+const HEAT = [
+  { min: 1,  label: '1',   color: 'rgba(80, 112, 200, 0.75)', width: 1.2 },
+  { min: 2,  label: '2',   color: '#6d74e8', width: 1.4 },
+  { min: 4,  label: '4',   color: '#a466ea', width: 1.6 },
+  { min: 8,  label: '8',   color: '#e45f9f', width: 1.9 },
+  { min: 16, label: '16',  color: '#ff9b52', width: 2.2 },
+  { min: 32, label: '32+', color: '#ffe6a8', width: 2.6 },
+];
+const heatBucket = (n) => { let b = 0; for (let i = 0; i < HEAT.length; i++) if (n >= HEAT[i].min) b = i; return b; };
 
 let globe;
 
@@ -78,6 +90,7 @@ async function init() {
 
   buildGlobe();
   buildSportToggles();
+  buildModeToggle();
   buildTimeline();
   render();
   openPlaceFromUrl();
@@ -97,10 +110,10 @@ function buildGlobe() {
     .pathPointLat((p) => p[0])
     .pathPointLng((p) => p[1])
     .pathPointAlt(0.0012)
-    .pathColor((s) => SPORTS[s.act.sport].color)
-    .pathStroke(1.6)
+    .pathColor((s) => (s.bucket != null ? HEAT[s.bucket].color : SPORTS[s.act.sport].color))
+    .pathStroke((s) => (s.bucket != null ? HEAT[s.bucket].width : 1.6) * (state.closeUp ? 1.35 : 1))
     .pathTransitionDuration(0)
-    .pathLabel((s) => tipHtml(s.act))
+    .pathLabel((s) => (s.bucket != null ? heatTipHtml(s) : tipHtml(s.act)))
     .onPathClick((s) => flyTo(s.act.place))
     // place spikes (world view)
     .pointLat('lat').pointLng('lng')
@@ -169,7 +182,7 @@ function buildGlobe() {
       $('credit').hidden = !close;
       document.body.classList.toggle('close-up', close);
       // fat lines get thinner relative to the view when zoomed in; keep them crisp
-      globe.pathStroke(close ? 2.2 : 1.6);
+      globe.pathStroke(globe.pathStroke());   // re-apply widths for the new zoom
     }
     // keep rotation gentle when close
     controls.rotateSpeed = Math.max(0.05, Math.min(1, altitude * 0.6));
@@ -299,14 +312,120 @@ function stopPlaying() {
   $('play').setAttribute('aria-label', 'Play timeline');
 }
 
+/* ---------------- Repeats heatmap ---------------- */
+
+// For every route point, list which activities passed within ~35 m of it.
+// Built once (a few hundred ms), then each redraw just counts the visible ones.
+let heatIndex = null;
+function buildHeatIndex() {
+  const CELL = 0.0003;                       // grid cell ≈ 33 m north–south
+  const acts = state.data.activities;
+  const colOf = (la, ln) => Math.round(ln / (CELL / Math.cos(la * Math.PI / 180)));
+  const grid = new Map();
+  acts.forEach((a, i) => {
+    for (const seg of a.segments) for (let k = 0; k < seg.length; k++) {
+      const p = seg[k], q = seg[k + 1] || p;
+      const dLat = q[0] - p[0], dLng = q[1] - p[1];
+      const metres = Math.hypot(dLat * 111000, dLng * 111000 * Math.cos(p[0] * Math.PI / 180));
+      const steps = Math.max(1, Math.ceil(metres / 15));   // fill gaps between sparse points
+      for (let t = 0; t < steps; t++) {
+        const la = p[0] + (dLat * t) / steps, ln = p[1] + (dLng * t) / steps;
+        const key = Math.round(la / CELL) + ',' + colOf(la, ln);
+        let set = grid.get(key);
+        if (!set) grid.set(key, (set = new Set()));
+        set.add(i);
+      }
+    }
+  });
+  // per activity → per segment → per point: activity ids nearby (3×3 cells)
+  heatIndex = acts.map((a) => a.segments.map((seg) => seg.map(([la, ln]) => {
+    const r = Math.round(la / CELL), c = colOf(la, ln), near = new Set();
+    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+      const cell = grid.get(r + dr + ',' + (c + dc));
+      if (cell) for (const id of cell) near.add(id);
+    }
+    return Int32Array.from(near);
+  })));
+}
+
+// Split visible routes into runs of points that share a colour bucket.
+function heatPaths(visibleIdx) {
+  if (!heatIndex) buildHeatIndex();
+  const acts = state.data.activities;
+  const on = new Uint8Array(acts.length);
+  for (const i of visibleIdx) on[i] = 1;
+  const paths = [];
+  for (const i of visibleIdx) {
+    const act = acts[i];
+    act.segments.forEach((seg, si) => {
+      const lists = heatIndex[i][si];
+      let chunk = null;
+      for (let k = 0; k < seg.length; k++) {
+        let n = 0;
+        for (const id of lists[k]) n += on[id];
+        const b = heatBucket(n);
+        if (!chunk || chunk.bucket !== b) {
+          if (chunk) { chunk.pts.push(seg[k]); if (chunk.pts.length > 1) paths.push(chunk); }
+          chunk = { act, bucket: b, count: n, pts: [seg[k]] };
+        } else {
+          chunk.pts.push(seg[k]);
+          chunk.count = Math.max(chunk.count, n);
+        }
+      }
+      if (chunk && chunk.pts.length > 1) paths.push(chunk);
+    });
+  }
+  // draw the hottest stretches last so they sit on top
+  return paths.sort((a, b) => a.bucket - b.bucket);
+}
+
+function heatTipHtml(s) {
+  const title = s.count === 1 ? 'Covered once' : `Covered ${s.count} times`;
+  return `<div class="tip"><b>${title}</b><span>One of them: ${esc(s.act.name)}, ${fmtDate(s.act.date)}</span></div>`;
+}
+
+function buildModeToggle() {
+  const wrap = document.createElement('div');
+  wrap.className = 'mode';
+  wrap.setAttribute('role', 'group');
+  wrap.setAttribute('aria-label', 'Colour routes by');
+  for (const [key, label] of [['sport', 'By sport'], ['heat', 'Repeats']]) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.dataset.mode = key;
+    b.textContent = label;
+    b.setAttribute('aria-pressed', String(state.mode === key));
+    b.addEventListener('click', () => {
+      state.mode = key;
+      for (const x of wrap.children) x.setAttribute('aria-pressed', String(x.dataset.mode === key));
+      render();
+    });
+    wrap.append(b);
+  }
+  $('sports').prepend(wrap);
+
+  const legend = $('legend');
+  legend.innerHTML = `<span class="legend-title">Times covered</span>` +
+    HEAT.map((h) => `<span class="legend-step"><i style="background:${h.color}"></i>${h.label}</span>`).join('');
+}
+
 /* ---------------- Render ---------------- */
 
 function render() {
   const { data, enabled, cutoff } = state;
   const visible = data.activities.filter((a) => enabled.has(a.sport) && a.date <= cutoff);
 
-  // routes: one path object per privacy-trimmed segment
-  globe.pathsData(visible.flatMap((act) => act.segments.map((pts) => ({ act, pts }))));
+  // routes: one path per privacy-trimmed segment, or per colour run in Repeats mode
+  const heat = state.mode === 'heat';
+  document.body.classList.toggle('heat', heat);
+  $('legend').hidden = !heat;
+  if (heat) {
+    const idx = [];
+    data.activities.forEach((a, i) => { if (enabled.has(a.sport) && a.date <= cutoff) idx.push(i); });
+    globe.pathsData(heatPaths(idx));
+  } else {
+    globe.pathsData(visible.flatMap((act) => act.segments.map((pts) => ({ act, pts }))));
+  }
 
   // places with stats for what's visible
   const stats = {};
