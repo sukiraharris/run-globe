@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Run Globe — Sukira Harris</title>
+  <meta name="description" content="Every run, ride, hike and walk I've recorded, drawn on a globe.">
+  <meta property="og:title" content="Every place I've run">
+  <meta property="og:description" content="Runs, rides and hikes from Strava, drawn on an interactive globe.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="globe" aria-label="Interactive globe of recorded routes"></div>
+
+  <header class="intro">
+    <h1>Every place I've run</h1>
+    <p class="summary" id="summary">Loading routes…</p>
+  </header>
+
+  <nav class="sports" id="sports" aria-label="Show or hide activity types"></nav>
+
+  <aside class="index" aria-label="Places">
+    <button class="world" id="world" type="button">Whole world</button>
+    <ol id="places"></ol>
+  </aside>
+
+  <section class="timeline" aria-label="Timeline">
+    <button class="play" id="play" type="button" aria-label="Play timeline">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path id="playIcon" d="M4 2.5v11l9-5.5z"/></svg>
+    </button>
+    <div class="track">
+      <canvas id="barcode" aria-hidden="true"></canvas>
+      <input type="range" id="scrub" min="0" max="100" value="100" aria-label="Show activities up to date">
+    </div>
+    <output id="dateLabel" for="scrub"></output>
+  </section>
+
+  <p class="note" id="note" hidden></p>
+  <p class="credit" id="credit" hidden>Map tiles © <a href="https://carto.com/attributions">CARTO</a>, © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors</p>
+
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/globe.gl@2.46.2/dist/globe.gl.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

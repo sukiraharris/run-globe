@@ -1,0 +1,43 @@
+name: Update routes from Strava
+
+on:
+  schedule:
+    - cron: "17 9 * * *"   # every day, 09:17 UTC
+  workflow_dispatch: {}     # "Run workflow" button in the Actions tab
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-data
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Fetch activities and rebuild data/activities.json
+        env:
+          STRAVA_CLIENT_ID: ${{ secrets.STRAVA_CLIENT_ID }}
+          STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}
+          STRAVA_REFRESH_TOKEN: ${{ secrets.STRAVA_REFRESH_TOKEN }}
+          PRIVACY_RADIUS_M: ${{ vars.PRIVACY_RADIUS_M || '500' }}
+        run: node scripts/fetch-strava.mjs
+
+      - name: Commit if anything changed
+        run: |
+          git config user.name "run-globe bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/
+          if git diff --cached --quiet; then
+            echo "No new activities."
+          else
+            git commit -m "Update routes from Strava"
+            git push
+          fi
