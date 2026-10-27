@@ -10,8 +10,32 @@ const SPORTS = {
 };
 const WORLD_VIEW = { lat: 38, lng: -40, altitude: innerWidth < 760 ? 3.6 : 2.3 };
 const LABEL_ALT_HIDE = 0.12;   // hide place pins once zoomed into a place
-// street tiles shown when zoomed into a place (Esri World Dark Gray, no API key needed)
-const TILE_URL = (x, y, l) => `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/${l}/${y}/${x}`;
+// Street maps shown when zoomed into a place.
+// Stadia "Alidade Smooth Dark" has place and street names; it needs this site's domain
+// added to a free Stadia account (see README). Until then we fall back to Esri's
+// keyless dark gray map, which has no labels.
+const TILES = {
+  stadia: {
+    url: (x, y, l) => `https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/${l}/${x}/${y}@2x.png`,
+    maxLevel: 19,
+    credit: '© <a href="https://stadiamaps.com/">Stadia Maps</a> © <a href="https://openmaptiles.org/">OpenMapTiles</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  },
+  esri: {
+    url: (x, y, l) => `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/${l}/${y}/${x}`,
+    maxLevel: 16,
+    credit: 'Map tiles © <a href="https://www.esri.com">Esri</a>, HERE, Garmin, © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  },
+};
+let tiles = TILES.esri;
+// Use Stadia if it answers for this site; otherwise stay on Esri.
+fetch(TILES.stadia.url(0, 0, 0), { mode: 'cors' })
+  .then((r) => { if (r.ok) tiles = TILES.stadia; })
+  .catch(() => {})
+  .finally(() => {
+    document.body.dataset.tiles = tiles === TILES.stadia ? 'stadia' : 'esri';
+    $('credit').innerHTML = tiles.credit;
+    if (state.closeUp && globe) globe.globeTileEngineMaxLevel(tiles.maxLevel).globeTileEngineUrl(tiles.url);
+  });
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const $ = (id) => document.getElementById(id);
@@ -140,8 +164,8 @@ function buildGlobe() {
       globe.pointsData(close ? [] : state.visiblePlaces || []);
       // swap the dotted world for real street tiles when zoomed into a place
       globe.hexPolygonsData(close ? [] : state.land || []);
-      globe.globeTileEngineMaxLevel?.(16);
-      globe.globeTileEngineUrl(close ? TILE_URL : null);
+      globe.globeTileEngineMaxLevel(tiles.maxLevel);
+      globe.globeTileEngineUrl(close ? tiles.url : null);
       $('credit').hidden = !close;
       document.body.classList.toggle('close-up', close);
       // fat lines get thinner relative to the view when zoomed in; keep them crisp

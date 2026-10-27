@@ -265,7 +265,7 @@ button:focus-visible, input:focus-visible {
 
 /* ---------- Street-level view ---------- */
 /* lift the very dark street tiles a little, and shade the edges so text stays readable */
-body.close-up #globe canvas { filter: brightness(1.25); }
+body.close-up[data-tiles="esri"] #globe canvas { filter: brightness(1.3) contrast(1.3); }
 body.close-up::after {
   content: "";
   position: fixed;

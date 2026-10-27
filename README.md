@@ -46,6 +46,15 @@ To build the data on your own machine instead:
 STRAVA_CLIENT_ID=… STRAVA_CLIENT_SECRET=… STRAVA_REFRESH_TOKEN=… node scripts/fetch-strava.mjs
 ```
 
+### 3. Street names on the zoomed-in map (optional, free)
+
+Zoomed-in views use [Stadia Maps](https://stadiamaps.com/) "Alidade Smooth Dark", which shows town and street names, once this site's domain is registered with them. Until then the site falls back to Esri's dark gray map, which has no labels.
+
+1. Create a free account at <https://client.stadiamaps.com/signup/>. No card is needed, and the free plan covers non-commercial sites.
+2. In the dashboard, go to **Manage Properties → Authentication Configuration** and add the domain `sukiraharris.github.io`.
+
+No code change or API key is needed. Refresh the site and the labelled map appears.
+
 ## Privacy
 
 This site is public, so the data is cleaned before it's published:
@@ -87,4 +96,4 @@ scripts/get-token.mjs              one-time Strava authorization helper
 .github/workflows/update-data.yml  daily refresh
 ```
 
-Street map tiles © [Esri](https://www.esri.com) (World Dark Gray Canvas), map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors. Country shapes from [Natural Earth](https://www.naturalearthdata.com/) via world-atlas.
+Street map tiles © [Stadia Maps](https://stadiamaps.com/) / [OpenMapTiles](https://openmaptiles.org/), or © [Esri](https://www.esri.com) (World Dark Gray Canvas) as a fallback. Map data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors. Country shapes from [Natural Earth](https://www.naturalearthdata.com/) via world-atlas.
